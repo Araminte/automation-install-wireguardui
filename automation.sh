@@ -8,6 +8,9 @@ sudo apt update -y
 echo "Upgrading installed packages..."
 sudo apt upgrade -y
 
+echo 'net.ipv4.ip_forward=1' | tee -a /etc/sysctl.conf
+
+
 # Confirm completion
 echo "System update and upgrade complete."
 
@@ -19,7 +22,7 @@ apt install wireguard -y
 echo "Downloading UI"
 wget -P /tmp https://github.com/ngoduykhanh/wireguard-ui/releases/download/v0.6.2/wireguard-ui-v0.6.2-linux-amd64.tar.gz
 echo "extracting wireguard-ui"
-tar -xzvf /tmp/wireguard-ui-*.tar.gz
+tar -xzvf /tmp/wireguard-ui-*.tar.gz -C /tmp
 
 echo "creation of the folder wireguard-ui"
 mkdir -p /opt/wireguard-ui
