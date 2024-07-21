@@ -45,19 +45,20 @@ echo "opening of port 5000"
 ufw allow 5000
 echo "opening of port 51820"
 ufw allow 51820
+ufw enable
 
 # Creating and configuration of a .env
 echo "var1=WGUI_USERNAME=admin" | tee /opt/wireguard-ui/.env > /dev/null
 echo "var2=WGUI_PASSWORD=admin" | tee -a /opt/wireguard-ui/.env > /dev/null
 
 # Creating two files .sh
-cat <<EOF > /opt/wireguard-ui-postup.sh
+cat <<EOF > /opt/wireguard-ui/postdown.sh
 #!/usr/bin/bash
 ufw route allow in on wg0 out on <INTERFACE>
 iptables -t nat -I POSTROUTING -o <INTERFACE> -j MASQUERADE
 EOF
 
-cat <<EOF > /opt/wireguard-ui-postup.sh
+cat <<EOF > /opt/wireguard-ui/postup.sh
 #!/usr/bin/bash
 ufw route delete allow in on wg0 out on <INTERFACE>
 iptables -t nat -D POSTROUTING -o <INTERFACE> -j MASQUERADE
@@ -83,4 +84,32 @@ ExecStart=/opt/wireguard-ui/wireguard-ui -bind-address "adresse IP:5000"
 [Install]
 WantedBy=multi-user.target
 EOF
+
+cat <<EOF > /etc/systemd/system/wgui.service
+[Unit]
+Description=Restart WireGuard
+After=network.target
+	
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl restart wg-quick@wg0.service
+
+[Install]
+RequiredBy=wgui.path
+EOF
+
+cat <<EOF > /etc/systemd/system/wgui.path
+[Unit]
+Description=Watch /etc/wireguard/wg0.conf for changes
+
+[Path]
+PathModified=/etc/wireguard/wg0.conf
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable wgui.{path,service}
+systemctl start wgui.{path,service}
 
